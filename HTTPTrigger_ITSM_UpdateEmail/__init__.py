@@ -4,6 +4,8 @@ import os
 import adal
 import azure.functions as func
 import requests
+from azure.keyvault.secrets import SecretClient
+from azure.identity import DefaultAzureCredential
 
 # Get client ID, secret, and tenant ID from environment variables
 client_id = os.environ['client_id']
