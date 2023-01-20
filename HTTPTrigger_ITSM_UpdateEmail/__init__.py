@@ -6,6 +6,7 @@ import azure.functions as func
 import requests
 from azure.keyvault.secrets import SecretClient
 from azure.identity import DefaultAzureCredential
+import time
 
 # Get client ID, secret, and tenant ID from environment variables
 client_id = os.environ['client_id']
@@ -73,7 +74,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             logging.info(f"User {old_email} not found.")
     except:
         pass
-
+    
+    # 15 second pause
+    time.sleep(15)
+    
     # Create a new Azure B2B invite for the specified email address
     try:
         response = requests.post(
