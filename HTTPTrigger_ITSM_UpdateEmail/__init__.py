@@ -18,11 +18,10 @@ context = adal.AuthenticationContext(f"https://login.microsoftonline.com/{tenant
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
-    logging.info("Received request with body: %s", req.get_body())
+    logging.info('Received request with body')
 
     # Get input parameters from the HTTP request body
     req_body = req.get_json()
-    logging.info('Req body is %s', req_body)
     old_email = req_body.get('old_email')
     logging.info('old email is %s', old_email)
     new_email = req_body.get('new_email')
@@ -47,13 +46,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         "Authorization": f"Bearer {token['accessToken']}",
         "Content-Type": "application/json"
     }
-    logging.info('Token is: %s', token)
+    logging.info('Created MS Graph Token')
 
     # Search for an existing user with the specified email address
     try:
         response = requests.get(f"https://graph.microsoft.com/v1.0/users?$filter=mail eq '{old_email}' or otherMails/any(x:x eq '{old_email}') or proxyAddresses/any(x:x eq '{old_email}')", headers=headers)
-        #response = requests.get(f"https://graph.microsoft.com/v1.0/users?$filter=(mail eq '{old_email}' or otherMails/any(c:c eq '{old_email}') or proxyAddresses/any(c:c eq '{old_email}'))", headers=headers)
-        #response = requests.get(f"https://graph.microsoft.com/v1.0/users?$filter=mail eq '{old_email}' or otherMails/any(x:x eq '{old_email}') or proxyAddresses/any(x:x eq '{old_email}')", headers=headers)
         try:
             user = response.json()["value"][0]
             logging.info('Found User %s',user)
