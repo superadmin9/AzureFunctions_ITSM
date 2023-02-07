@@ -94,7 +94,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         response = requests.post(f"https://graph.microsoft.com/v1.0/users", headers=headers, json=new_user_data)
 
-        logging.info("New Account Headers %s", headers)
         logging.info("New Account Response %s", response)
         response.raise_for_status()
 
@@ -125,8 +124,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     
     # Add the new user to the security group EX Non B2B Users
-    group_id = os.environ['EXNonB2BAzGroupId']
-    url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/$ref"
+    EXNonB2BAzGroupId = os.environ['EXNonB2BAzGroupId']
+    url = f"https://graph.microsoft.com/v1.0/groups/{EXNonB2BAzGroupId}/members/$ref"
     data = {"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_id}"}
     response = requests.post(url, headers=headers, json=data)
 
