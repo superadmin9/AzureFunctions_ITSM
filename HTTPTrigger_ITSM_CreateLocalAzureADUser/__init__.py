@@ -78,35 +78,21 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     # Create a new Local Azure AD User
     try:
-        # Create a new Azure AD local user account
         upn = first_name + "." + last_name + "@wedc.onmicrosoft.com"
-        mailnickname =  first_name + last_name       
+        mailnickname =  first_name + last_name              
         new_user_data = {
-            "accountEnabled": True,
+            "accountEnabled": "true",
             "displayName": full_name,
             "mailNickname": mailnickname,
             "userPrincipalName": upn,
             "passwordProfile": {
-                "forceChangePasswordNextSignIn": True,
-                "password": "WelcomeToWEDC!"
-            },
-            "mail": new_email
+                "forceChangePasswordNextSignIn": "true",
+                "password": f"WelcomeToWEDC!"
+            }
         }
         logging.info("New Account Data %s", new_user_data)
-        payload = '''{
-            "accountEnabled": true,
-            "displayName": "{}",
-            "mailNickname": "{}",
-            "userPrincipalName": "{}",
-            "passwordProfile": {{
-                "forceChangePasswordNextSignIn": true,
-                "password": "{}"
-            }},
-            "email": "{}"
-        }}'''.format(full_name, first_name + last_name, "{}@mydomain.onmicrosoft.com".format(first_name + "." + last_name), "WelcomeToWEDC!", new_email)
-        logging.info("New Account Payload %s", payload)
-        response = requests.post("https://graph.microsoft.com/v1.0/users", headers=headers, json=payload)
-        logging.info("New Account Payload %s", payload)
+
+        response = requests.post(f"https://graph.microsoft.com/v1.0/users", headers=headers, json=new_user_data)
 
         logging.info("New Account Headers %s", headers)
         logging.info("New Account Response %s", response)
@@ -114,16 +100,31 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         new_user = response.json()
         new_user_id = new_user["id"]
+
+        # Update the created user's "mail" property
+        update_user_data = {
+            "mail": new_email
+        }
+        update_response = requests.patch(f"https://graph.microsoft.com/v1.0/users/{new_user_id}", headers=headers, json=update_user_data)
+        update_response.raise_for_status()
+        
     except Exception as e:
         return func.HttpResponse(f'Error Creating User: {str(e)}', status_code=500)
 
-# Add the new_email user to each group
-    for group in groups:
-        requests.post(f"https://graph.microsoft.com/v1.0/groups/{group['id']}/members/$ref", json={"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_id}"}, headers=headers)
-        logging.info(f'Added user with email "{new_email}" to group "{group["displayName"]}".')
+
+# Add the new_email user to each group associated with old email
+    if "groups" in locals():
+        for group in groups:
+            try:
+                requests.post(f"https://graph.microsoft.com/v1.0/groups/{group['id']}/members/$ref", json={"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_id}"}, headers=headers)
+                logging.info(f'Added user with email "{new_email}" to group "{group["displayName"]}".')
+            except Exception as e:
+                logging.error(f'Error adding user with email "{new_email}" to group "{group["displayName"]}". Error: {str(e)}')
+    else:
+        logging.info("Variable 'groups' not defined.")
 
     
-    # Add the new user to the security group with object id 12345-45678-4564789
+    # Add the new user to the security group EX Non B2B Users
     group_id = os.environ['EXNonB2BAzGroupId']
     url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/$ref"
     data = {"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_id}"}
@@ -132,7 +133,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if response.status_code != 204:
         logging.error("Failed to add user to group %s", response.text)
     else:
-        logging.info("Successfully added user to group")
+        logging.info("Successfully added user to group EX Non B2B Users")
 
     
 
