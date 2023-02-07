@@ -73,7 +73,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         pass
     
     # 15 second pause
- #   time.sleep(15)
+    time.sleep(15)
     
 
     # Create a new Local Azure AD User
