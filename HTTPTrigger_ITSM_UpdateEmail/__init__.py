@@ -93,11 +93,21 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(f'Error sending B2B invite: {str(e)}', status_code=500)
 
 # Add the new_email user to each group
-    for group in groups:
-        requests.post(f"https://graph.microsoft.com/v1.0/groups/{group['id']}/members/$ref", json={"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_object_id}"}, headers=headers)
-        logging.info(f'Added user with email "{new_email}" to group "{group["displayName"]}".')
+#    for group in groups:
+#        requests.post(f"https://graph.microsoft.com/v1.0/groups/{group['id']}/members/$ref", json={"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_object_id}"}, headers=headers)
+#        logging.info(f'Added user with email "{new_email}" to group "{group["displayName"]}".')
 
-    
+# Add the new_email user to each group associated with old email
+    if "groups" in locals():
+        for group in groups:
+            try:
+                requests.post(f"https://graph.microsoft.com/v1.0/groups/{group['id']}/members/$ref", json={"@odata.id": f"https://graph.microsoft.com/v1.0/users/{new_user_object_id}"}, headers=headers)
+                logging.info(f'Added user with email "{new_email}" to group "{group["displayName"]}".')
+            except Exception as e:
+                logging.error(f'Error adding user with email "{new_email}" to group "{group["displayName"]}". Error: {str(e)}')
+    else:
+        logging.info("Variable 'groups' not defined.")
+
 
     # Return a success message
     return func.HttpResponse(f'Successfully created user with email "{new_email}" and added to groups associated with "{old_email}"', status_code=200)
